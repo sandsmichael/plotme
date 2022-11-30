@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 
 import matplotlib.pyplot as plt 
-from matplotlib.pyplot import figure
 
 import seaborn as sns
 sns.set_theme(style="whitegrid")
@@ -57,6 +56,30 @@ melt = df.melt(id_vars = ['ticker', 'name', 'calendardate', 'sector', 'industry'
 # 12847    NTR                NUTRIEN LTD   2017-12-31  Basic Materials    Agricultural Inputs      rnd  0.000000e+00
 
 # print(melt)
+class Yax:
+
+    def __init__(self, g):
+
+        self.g = g
+
+
+    def set_ylabels(self, units=None, format_code = '{:,.2f}'):
+
+        units_map = {None:1, 'M':1000000, 'B':1000000000}
+
+        divisor = units_map[units]
+
+        ylabels = [format_code.format(x) + str(units or '') for x in self.g.get_yticks() / divisor]
+
+        self.g.set_yticklabels(ylabels)
+
+
+    def set_ylim(self, data):
+        # calculate ylim based on data param
+        
+        plt.ylim([-1, 1])
+
+
 
 class Plotme:
 
@@ -69,33 +92,38 @@ class Plotme:
         self.y = y
 
         self.figsize = figsize
-
         
 
-    def box_plot(self, title, swarm = False):
+    def box_swarm_plot(
+                    self, 
+                    title, 
+                    showfliers = False,
+                    orient = 'v'
+                ):
         
-        fig = figure(figsize=self.figsize, dpi=80)
+        fig = plt.figure(figsize=self.figsize, dpi=80)
+        
+        # ax = fig.add_subplot(111)
 
-        g = sns.boxplot(data=self.data, x = self.x, y = self.y, palette="Set2", showfliers  = False, orient = 'v')
+        g = sns.boxplot(data=self.data, x = self.x, y = self.y, palette="Set2", showfliers = showfliers, orient = orient)
 
-        if swarm:
-            sns.swarmplot(data=self.data, x = self.x, y = self.y, color="black", size = 2 )
+        sns.swarmplot(data=self.data, x = self.x, y = self.y, color="black", size = 2 )
 
         g.set_title(title)
-        # chart.set_xticklabels(chart.get_xticklabels(), rotation=10)
-        g.tick_params(labelrotation=10)
 
-        # if unit_divisor == 1000000000:
-        #     ylabels = ['{:,.0f}'.format(x) + 'B' for x in chart.get_yticks()/unit_divisor]
+        axis = Yax(g)
 
-        # chart.set_yticklabels(ylabels)
+        axis.set_ylim(self.data)
+
+        axis.set_ylabels(units=None)
 
         plt.show()
 
         return g
 
+
 p = Plotme( data = melt[melt.calendardate == '2022-09-30'][-200:], x = 'variable', y = 'value')
-p.box_plot(title = ' a title', swarm = True)
+p.box_swarm_plot(title = 'Boxplot')
 
 
 
