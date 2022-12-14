@@ -8,9 +8,10 @@ import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
 import numpy as np
 import matplotlib.pyplot as plt 
-import matplotlib.dates as mdates
+from matplotlib import pyplot as plt, dates
 import seaborn as sns
 from sqlalchemy import create_engine
+import dummy_data as dummy
 
 sns.set_theme(style="whitegrid")
 sns.set_palette("Set2")
@@ -54,9 +55,23 @@ class Xax:
 
         self.g = g
 
+
     def rotate(self, degrees):
         
         plt.xticks(rotation = degrees, ha = 'center')
+
+
+    def date_format(self, ax):
+        
+        ax.xaxis.set_major_formatter(dates.DateFormatter('%Y-%m-%d'))
+
+        ax.set_xticklabels( ax.get_xticklabels(), rotation=90, horizontalalignment='center')
+
+
+    def every_other(self, ax):
+        
+        for label in ax.xaxis.get_ticklabels()[::2]:
+            label.set_visible(False)
 
 
 
@@ -75,11 +90,15 @@ class Plotme:
 
         self.fig = fig
 
+        self.figsize = figsize 
+
         if self.fig is not None:
             
             self.fig = plt.figure(figsize=self.figsize, dpi=80)
 
-        self.figsize = figsize 
+        print(self.data)
+
+        print(self.data.dtypes)
 
 
 
@@ -162,25 +181,42 @@ class Plotme:
         palette = "Set2"
     ):
 
-        g = sns.FacetGrid(data = self.data, col = col, row = row, hue = self.hue, height = height, sharex=sharex, sharey=sharey, despine=despine, margin_titles = True)
+        g = sns.FacetGrid(data = self.data, col = col, row = row,  height = height, sharex=sharex, sharey=sharey, despine=despine, margin_titles = True)
 
         if map == 'line':
-            g.map(sns.lineplot,self.x, self.y, palette=palette)
+            g.map(sns.lineplot,self.x, self.y,  self.hue, palette=palette)
         
         if map == 'bar':
-            g.map(sns.barplot, self.x, self.y, ci = None, palette=palette)
+            g.map(sns.barplot, self.x, self.y, self.hue, ci = None, palette=palette)
+
+
+        xax = Xax(g)
 
         for ax in g.axes.flat:
 
-            ax.legend()
+            if self.data[self.x].dtype == 'object': 
 
-            ax.set_xticklabels( ax.get_xticklabels(), rotation=90, horizontalalignment='center')
+                print('String Type X-axis detected')
 
-            for label in ax.xaxis.get_ticklabels()[::2]:
-                label.set_visible(False)
+                ax.legend(loc = 'best')
+
+            elif self.data[self.x].dtype == 'datetime64[ns]': 
+
+                print('Date Type X-axis detected')
+
+                ax.legend()
+
+                xax.date_format(ax)
+
+                # xax.every_other(ax)
+
+            else:
+
+                print('Can\t detect X Axis type')
+                print(self.data[self.x].dtype)
+
 
         g.set_titles(col_template = '{col_name}', row_template='{row_name}')
-
 
         color_palette = sns.color_palette(palette, 20)
 
@@ -195,23 +231,6 @@ class Plotme:
   └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
  """
 
-df = pd.read_csv('./equity_fundamentals_revenue_leaders.csv')
-melt = df.melt(id_vars = ['ticker', 'name', 'calendardate', 'sector', 'industry'], value_vars = ['fcfmargin','eps','oppmargin','profitmargin', 'netmargin', 'roc', 'roe', 'revenue'])
-
-# ...Sample Data...
-melt.calendardate = pd.to_datetime(melt.calendardate, infer_datetime_format=True)
-
-sample1 = melt[(melt.calendardate == '2022-09-30') & (melt.variable.isin(['fcfmargin','oppmargin','profitmargin', 'netmargin']))]
-
-sample2 = melt[ (melt.sector == 'Utilities') & (melt.calendardate > pd.to_datetime('2020-09-30')) & (melt.variable == 'revenue') ]
-sample2 = sample2[sample2.ticker != 'CEG']
-sample2 = sample2.sort_values(by = ['ticker', 'calendardate'], ascending=True).reset_index(drop=True)
-
-sample3 = melt[ (melt.sector == 'Utilities') & (melt.calendardate > pd.to_datetime('2015-03-31')) & (melt.variable.isin(['fcfmargin','oppmargin','profitmargin', 'netmargin'])) ]
-sample3 = sample3[sample3.ticker != 'CEG']
-sample3.calendardate = sample3.calendardate.apply(lambda x : x.strftime('%Y-%m-%d'))
-sample3 = sample3.sort_values(by = ['ticker', 'calendardate'], ascending=True).reset_index(drop=True)
-
 
 
 # ...Examples...
@@ -222,14 +241,23 @@ sample3 = sample3.sort_values(by = ['ticker', 'calendardate'], ascending=True).r
 
 
 # Clustered Bar Plot
-# p = Plotme( data = sample2, x = 'calendardate', y = 'value', hue = 'name')
-# p.clustered_bar(title = 'Clustered Bar', label_annotation = 'ticker')
+# p = Plotme( fig = True, data = sample2, x = 'calendardate', y = 'value', hue = 'name')
+# p.clustered_bar(title = 'Quarterly Revenue', label_annotation = 'ticker')
 
 
-# # Facet Grid Line
+# # # Facet Grid Line
 # p = Plotme( data = sample3, x = 'calendardate', y = 'value', hue = 'ticker')
 # p.facet_grid(col = 'variable', row = None, map = 'line', title = 'Facet Grid of Line Charts')
 
+
+# # Facet Grid Line
+# p = Plotme( data = sample4, x = 'variable', y = 'value', hue = 'variable')
+# p.facet_grid(col = 'ticker', row = None, map = 'bar', title = 'Facet Grid of Line Charts')
+
+
+# # Facet Grid Line
+p = Plotme( data = dummy.sample5, x = 'calendardate', y = 'value', hue = 'variable')
+p.facet_grid(col = 'ticker', row = None, map = 'bar', title = 'Facet Grid of Line Charts')
 
 
 
