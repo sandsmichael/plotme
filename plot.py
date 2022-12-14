@@ -162,7 +162,7 @@ class Plotme:
         palette = "Set2"
     ):
 
-        g = sns.FacetGrid(data = self.data, col = col, row = row, hue = None, height = height, sharex=sharex, sharey=sharey, despine=despine)
+        g = sns.FacetGrid(data = self.data, col = col, row = row, hue = self.hue, height = height, sharex=sharex, sharey=sharey, despine=despine, margin_titles = True)
 
         if map == 'line':
             g.map(sns.lineplot,self.x, self.y, palette=palette)
@@ -172,18 +172,15 @@ class Plotme:
 
         for ax in g.axes.flat:
 
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='center')
-            
-            # fmt = mdates.DateFormatter('%Y-%m-%d')
-            
-            # ax.xaxis.set_major_formatter(fmt)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
-            
+            ax.legend()
 
+            ax.set_xticklabels( ax.get_xticklabels(), rotation=90, horizontalalignment='center')
 
-
+            for label in ax.xaxis.get_ticklabels()[::2]:
+                label.set_visible(False)
 
         g.set_titles(col_template = '{col_name}', row_template='{row_name}')
+
 
         color_palette = sns.color_palette(palette, 20)
 
@@ -202,9 +199,9 @@ df = pd.read_csv('./equity_fundamentals_revenue_leaders.csv')
 melt = df.melt(id_vars = ['ticker', 'name', 'calendardate', 'sector', 'industry'], value_vars = ['fcfmargin','eps','oppmargin','profitmargin', 'netmargin', 'roc', 'roe', 'revenue'])
 
 # ...Sample Data...
-melt.calendardate = pd.to_datetime(melt.calendardate)
+melt.calendardate = pd.to_datetime(melt.calendardate, infer_datetime_format=True)
 
-sample1 = melt[melt.calendardate == '2022-09-30'][-200:]
+sample1 = melt[(melt.calendardate == '2022-09-30') & (melt.variable.isin(['fcfmargin','oppmargin','profitmargin', 'netmargin']))]
 
 sample2 = melt[ (melt.sector == 'Utilities') & (melt.calendardate > pd.to_datetime('2020-09-30')) & (melt.variable == 'revenue') ]
 sample2 = sample2[sample2.ticker != 'CEG']
@@ -212,30 +209,28 @@ sample2 = sample2.sort_values(by = ['ticker', 'calendardate'], ascending=True).r
 
 sample3 = melt[ (melt.sector == 'Utilities') & (melt.calendardate > pd.to_datetime('2015-03-31')) & (melt.variable.isin(['fcfmargin','oppmargin','profitmargin', 'netmargin'])) ]
 sample3 = sample3[sample3.ticker != 'CEG']
+sample3.calendardate = sample3.calendardate.apply(lambda x : x.strftime('%Y-%m-%d'))
 sample3 = sample3.sort_values(by = ['ticker', 'calendardate'], ascending=True).reset_index(drop=True)
-print(sample3.dtypes)
-print(sample3)
+
+
 
 # ...Examples...
 
 # Boxplot
-# p = Plotme( data = sample_boxplot, x = 'variable', y = 'value')
+# p = Plotme( data = sample1, x = 'variable', y = 'value')
 # p.box_swarm(title = 'Boxplot')
 
 
 # Clustered Bar Plot
-# p = Plotme( data = sample_clustered_bar, x = 'calendardate', y = 'value', hue = 'name')
+# p = Plotme( data = sample2, x = 'calendardate', y = 'value', hue = 'name')
 # p.clustered_bar(title = 'Clustered Bar', label_annotation = 'ticker')
 
 
-# Facet Grid Line
-# p = Plotme( data = sample3, x = 'calendardate', y = 'value')
-# p.facet_grid(col='variable', row = 'name', title = 'Facet Grid of Line Charts')
+# # Facet Grid Line
+# p = Plotme( data = sample3, x = 'calendardate', y = 'value', hue = 'ticker')
+# p.facet_grid(col = 'variable', row = None, map = 'line', title = 'Facet Grid of Line Charts')
 
 
-# Facet Grid Bar
-p = Plotme( data = sample3, x = 'calendardate', y = 'value', hue = 'variable')
-p.facet_grid(col = 'name', row = None, map = 'bar', title = 'Facet Grid of Line Charts')
 
 
 
