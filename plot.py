@@ -283,7 +283,7 @@ class Plotme:
 
 """ 
   ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-  │ Example:                                                                                                         │
+  │ Examples:                                                                                                         │
   └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
  """
 
@@ -292,8 +292,8 @@ class Plotme:
 # ...Examples...
 
 # Boxplot
-p = Plotme( data = dummy.sample1, x = 'variable', y = 'value')
-p.box_swarm(title = 'Boxplot')
+# p = Plotme( data = dummy.sample1, x = 'variable', y = 'value')
+# p.box_swarm(title = 'Boxplot')
 
 
 # Clustered Bar Plot
@@ -316,11 +316,19 @@ p.box_swarm(title = 'Boxplot')
 # p.facet_grid(col = 'ticker', row = None, map = 'bar', legend = True, dodge=True, title = 'Facet Grid of Line Charts')
 
 
+## **kwargs
+g = sns.FacetGrid(data = dummy.sample5, col = 'ticker')
+g.map(sns.lineplot, 'calendardate',  'value')
+plt.show()
 
 
 
 
-
+""" 
+  ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Todo                                                                                                             │
+  └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+ """
 
 # def waterfall():
 #   pass
