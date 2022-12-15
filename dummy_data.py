@@ -81,3 +81,4 @@ sample5 = melt[ (melt.sector == 'Utilities') & (melt.calendardate > pd.to_dateti
 sample5 = sample5[sample5.ticker != 'CEG']
 # sample4.calendardate = sample4.calendardate.apply(lambda x : x.strftime('%Y-%m-%d'))
 sample5 = sample5.sort_values(by = ['ticker', 'calendardate'], ascending=True).reset_index(drop=True)
+sample5['calendardate'] =  sample5['calendardate'].apply(lambda x : x.strftime('%Y-%m-%d'))
