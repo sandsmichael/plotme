@@ -52,7 +52,7 @@ def query():
 
 
 
-df = pd.read_csv('./equity_fundamentals_revenue_leaders.csv')
+df = pd.read_csv('./data/equity_fundamentals_revenue_leaders.csv')
 
 melt = df.melt(id_vars = ['ticker', 'name', 'calendardate', 'sector', 'industry'], value_vars = ['fcfmargin','eps','oppmargin','profitmargin', 'netmargin', 'roc', 'roe', 'revenue'])
 

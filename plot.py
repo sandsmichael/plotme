@@ -1,7 +1,7 @@
 
 """ 
   ┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-  │                        helper functions for efficiently creating seaborn graphics                                  |
+  │                        helpers for efficiently creating seaborn graphics                                           |
   └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
  """
 import pandas as pd
@@ -18,12 +18,10 @@ sns.set_theme(style="whitegrid")
 sns.set_palette("Set2")
 COLOR_PALETTE = sns.color_palette("Set2", 20)
 
-# TODO: use kwargs{}
 
 class Yax:
     """ Y-Axis
     """    
-
 
     def __init__(self, g):
         """[Summary]
@@ -38,7 +36,6 @@ class Yax:
     def annotate(self, ax, annotation_series:pd.Series=None):
 
         # TODO: needs an is_clustered parameter to distinguish between clustered plot annotations
-        
         print(annotation_series)
 
         patch_labels = []
@@ -114,8 +111,11 @@ class Xax:
 
     def rotate(self, ax, degrees):
 
-        ax.set_xticklabels( ax.get_xticklabels(), rotation=degrees, horizontalalignment='center')
+        if ax is not None:
+
+            ax.set_xticklabels( ax.get_xticklabels(), rotation=degrees, horizontalalignment='center')
         
+
         # plt.xticks(rotation = degrees, ha = 'center')
 
 
@@ -125,160 +125,46 @@ class Xax:
 
 
 
+def _facet_grid(
+    g,
+    data,
+    x, 
+    y,
+    hue,
+    annotation,
+    palette = "Set2",
+    legend = False,
+):
 
-
-
-class Plotme:
-
-    def __init__(self,  data, x, y, hue=None, annotation=None, fig=None, figsize=(20, 10)):
-
-        self.data = data
-
-        self.x = x
-
-        self.y = y
-
-        self.hue = hue
-
-        self.annotation = annotation
-
-        self.fig = fig
-
-        self.figsize = figsize 
-
-        if self.fig is not None:
-            
-            self.fig = plt.figure(figsize=self.figsize, dpi=80)
-
-        print(self.data)
-
-        print(self.data.dtypes)
-
-        print(self.hue)
-
-        print(self.x)
-
-
-
-    def box_swarm(
-        self, 
-        title, 
-        showfliers = False,
-        orient = 'v'
-    ):
-        
-        g = sns.boxplot(data=self.data, x = self.x, y = self.y, showfliers = showfliers, orient = orient)
-
-        sns.swarmplot(data=self.data, x = self.x, y = self.y, color="black", size = 2 )
-
-        g.set_title(title)
-
-        yax = Yax(g)
-
-        yax.set_ylabels(units=None)
-
-        plt.show()
-
-        return g
-
+    xax = Xax(g)
     
+    yax = Yax(g)
 
-    def clustered_bar(
-        self, 
-        title:str,
-        label_annotation:str = None,
-    ):
-        """[Summary]
-        
-        :param [label_annotation]: 
-            Melted dataframe must have an equal number of records across the ploted bars in order to annotate
-        
-        :raises [ErrorType]: 
-        """    
+    for ax in g.axes.flat:
 
-        g = sns.barplot(data = self.data, x = self.x, y = self.y, hue = self.hue, palette="Set2")
+        if legend:
+            ax.legend(loc = 'best')
 
-        # NOTE @DEPRECATE for Yax methods
-        if label_annotation is not None:
+        xax.rotate(ax, 90)
+
+        if hue == x:
             
-            patch_labels = []
-            for i in range(len(self.data[label_annotation])): # data must have the same number of records for each annotation
-                patch_labels.append(self.data[label_annotation].iloc[i]) 
+            xax.color_tick_labels(ax)
 
-            # annotate bar centering around half of it's height adjusting for the lenght of the text being written
-            for i, p in enumerate(g.patches):  
-                    g.annotate( patch_labels[i], (p.get_x() + (p.get_width() / 2.0), (p.get_height() - ( p.get_height() * (len(patch_labels[i]) + 1) / 100 ) )/ 2 ), ha = 'center', va = 'center', rotation = 90, size = 10 ) #  xytext = (1, 0), textcoords = 'offset points',
-
-            g.get_legend().remove()
-
-        g.set_title(title)
-
-        yax = Yax(g)
-
-        yax.set_ylabels(units = 'M')
-
-        xax = Xax(g)
-
-        xax.rotate(degrees = 45)
-
-        plt.show()
-
-        return g
-
-
-
-    def facet_grid(
-        self, 
-        title:str,
-        col,
-        row,
-        map,
-        height = 3,
-        sharex = False,
-        sharey = False,
-        despine = False,
-        palette = "Set2",
-        legend = False,
-        dodge = False
-    ):
-
-        g = sns.FacetGrid(data = self.data, col = col, row = row,  height = height, sharex=sharex, sharey=sharey, despine=despine, margin_titles = True)
-
-        if map == 'line':
-            g.map(sns.lineplot,self.x, self.y,  self.hue, palette=palette)
-        
-        if map == 'bar':
-            g.map(sns.barplot, self.x, self.y, self.hue, dodge=dodge, ci = None, palette=palette)
-
-            xax = Xax(g)
+        if len(data[x].unique()) > 10:
             
-            yax = Yax(g)
+            xax.every_other(ax)
 
-            for ax in g.axes.flat:
+        if annotation is not None:
+            yax.annotate(ax, annotation_series=data[annotation])
 
-                if legend:
-                    ax.legend(loc = 'best')
+    g.set_titles(col_template = '{col_name}', row_template='{row_name}')
 
-                xax.rotate(ax, 90)
+    color_palette = sns.color_palette(palette, 20)
 
-                if self.hue == self.x:
-                    
-                    xax.color_tick_labels(ax)
+    plt.show()
 
-                if len(self.data[self.x].unique()) > 10:
-                    
-                    xax.every_other(ax)
-
-                if self.annotation is not None:
-                    yax.annotate(ax, annotation_series=self.data[self.annotation])
-
-        g.set_titles(col_template = '{col_name}', row_template='{row_name}')
-
-        color_palette = sns.color_palette(palette, 20)
-
-        plt.show()
-
-        return g
+    return g
 
 
 """ 
@@ -291,24 +177,34 @@ class Plotme:
 
 # ...Examples...
 
-# Boxplot
-# p = Plotme( data = dummy.sample1, x = 'variable', y = 'value')
-# p.box_swarm(title = 'Boxplot')
+# Box & Swarm Plot
+# g = sns.boxplot(data=dummy.sample1, x = 'variable', y = 'value', showfliers = False, orient = 'v')
+# sns.swarmplot(data=dummy.sample1, x = 'variable', y = 'value', color="black", size = 2 )
+# g.set_title('Title')
+# yax = Yax(g)
+# yax.set_ylabels(units=None)
+# plt.show()
 
 
 # Clustered Bar Plot
-# p = Plotme( fig = True, data = dummy.sample2, x = 'calendardate', y = 'value', hue = 'name')
-# p.clustered_bar(title = 'Quarterly Revenue', label_annotation = 'ticker')
+# g = sns.barplot(data =dummy.sample2, x = 'calendardate', y = 'value', hue = None, palette="Set2")
+# g.set_title('Title')
+# xax, yax = Xax(g), Yax(g) 
+# yax.set_ylabels(units = 'M')
+# xax.rotate(ax=g.axes, degrees = 45)
+# plt.show()
 
 
 # # # Facet Grid Line
-# p = Plotme( data = dummy.sample3, x = 'calendardate', y = 'value', hue = 'ticker')
-# p.facet_grid(col = 'variable', row = None, map = 'line', title = 'Facet Grid of Line Charts')
+# g = sns.FacetGrid(data = dummy.sample3, col = 'variable', row = None, hue = 'ticker', height = 5, sharex=False, sharey=False, despine=True, margin_titles = True)
+# g.map(sns.lineplot, 'calendardate', 'value',  palette="Set2")
+# _facet_grid(g, data = dummy.sample3, x = 'calendardate', y = 'value',  hue = 'ticker', annotation = None)
 
 
 # # Facet Grid Bar Hue X Axis
-# p = Plotme( data = dummy.sample4, x = 'variable', y = 'value', hue = 'variable', annotation='value', )
-# p.facet_grid(col = 'ticker', row = None, map = 'bar', dodge = False, title = 'Facet Grid of Line Charts')
+g = sns.FacetGrid(data = dummy.sample4, col = 'ticker', row = None, hue = 'variable', height = 5, sharex=False, sharey=False, despine=True, margin_titles = True)
+g.map(sns.lineplot, 'variable', 'value',  palette="Set2")
+_facet_grid(g, data = dummy.sample3, x = 'variable', y = 'value',  hue = 'variable', annotation = None)
 
 
 # # Facet Grid Bar Date X Axis
@@ -317,9 +213,9 @@ class Plotme:
 
 
 ## **kwargs
-g = sns.FacetGrid(data = dummy.sample5, col = 'ticker')
-g.map(sns.lineplot, 'calendardate',  'value')
-plt.show()
+# g = sns.FacetGrid(data = dummy.sample5, col = 'ticker')
+# g.map(sns.lineplot, 'calendardate',  'value')
+# plt.show()
 
 
 
