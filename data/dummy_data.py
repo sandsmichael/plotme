@@ -1,6 +1,7 @@
 import pandas as pd
 from sqlalchemy import create_engine
 
+
 def query():
 
     # Build dummy data
@@ -66,6 +67,7 @@ sample2 = melt[ (melt.sector == 'Utilities') & (melt.calendardate > pd.to_dateti
 sample2 = sample2[sample2.ticker != 'CEG']
 # sample2.calendardate = sample2.calendardate.apply(lambda x : x.strftime('%Y-%m-%d'))
 sample2 = sample2.sort_values(by = ['ticker', 'calendardate'], ascending=True).reset_index(drop=True)
+sample2['calendardate'] =  sample2['calendardate'].apply(lambda x : x.strftime('%Y-%m-%d'))
 
 sample3 = melt[ (melt.sector == 'Utilities') & (melt.calendardate > pd.to_datetime('2015-03-31')) & (melt.variable.isin(['fcfmargin','oppmargin','profitmargin', 'netmargin'])) ]
 sample3 = sample3[sample3.ticker != 'CEG']
@@ -82,3 +84,4 @@ sample5 = sample5[sample5.ticker != 'CEG']
 # sample4.calendardate = sample4.calendardate.apply(lambda x : x.strftime('%Y-%m-%d'))
 sample5 = sample5.sort_values(by = ['ticker', 'calendardate'], ascending=True).reset_index(drop=True)
 sample5['calendardate'] =  sample5['calendardate'].apply(lambda x : x.strftime('%Y-%m-%d'))
+
