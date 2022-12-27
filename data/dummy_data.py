@@ -7,15 +7,15 @@ def query():
     # Build dummy data
     engine = create_engine('sqlite:///C:\data\industry_fundamentals.db', echo=False)
     cnxn = engine.connect()
-    df = pd.read_sql("select * from CompFunBase", cnxn)[['ticker','name','calendardate','sector','industry','revenue', 'fcfmargin','eps','oppmargin','profitmargin', 'netmargin', 'pe','roc', 'roe',]].dropna(axis=0)
+    df = pd.read_sql("select * from CompFunBase", cnxn)[['ticker','name','calendardate','sector','industry','revenue', 'fcfmargin','eps','oppmargin','profitmargin', 'netmargin', 'pe','roc', 'roe','assets', 'liabilities']].dropna(axis=0)
     df = df.sort_values(by=['sector','industry','revenue'], ascending = False)
     industry_leaders = df.drop_duplicates(subset=['industry'], keep = 'first')
     df = df[df.ticker.isin(industry_leaders.ticker)]
-    df.to_csv('./equity_fundamentals_revenue_leaders.csv')
+    df.to_csv('./data/equity_fundamentals_revenue_leaders.csv')
     print(df)
 
 
-    df = pd.read_csv('./equity_fundamentals_revenue_leaders.csv')
+    df = pd.read_csv('./data/equity_fundamentals_revenue_leaders.csv')
 
     #       ticker                              name calendardate           sector                     industry       revenue  fcfmargin   eps  oppmargin  profitmargin  netmargin       pe       roc       roe
     # 21383    CEG         CONSTELLATION ENERGY CORP   2022-09-30        Utilities        Utilities - Renewable  6.051000e+09  -0.245249 -0.57  -0.006776     -0.031069   0.036688 -180.068 -0.011651 -0.017436
@@ -30,7 +30,7 @@ def query():
     # 77681    NTR                       NUTRIEN LTD   2018-03-31  Basic Materials          Agricultural Inputs  3.666000e+09  -0.157665  0.00   0.040371     -0.000273   0.231042  171.885 -0.000029 -0.000043
     # 77688    NTR                       NUTRIEN LTD   2019-12-31  Basic Materials          Agricultural Inputs  3.503000e+09   0.520411 -0.08   0.043677     -0.013703   0.306880   27.668 -0.001413 -0.002099
 
-    melt = df.melt(id_vars = ['ticker', 'name', 'calendardate', 'sector', 'industry'], value_vars = ['fcfmargin','eps','oppmargin','profitmargin', 'netmargin', 'roc', 'roe'])
+    melt = df.melt(id_vars = ['ticker', 'name', 'calendardate', 'sector', 'industry'], value_vars = ['fcfmargin','eps','oppmargin','profitmargin', 'netmargin', 'roc', 'roe', 'assets', 'liabilities'])
 
     #       ticker                       name calendardate           sector               industry variable         value
     # 0        CEG  CONSTELLATION ENERGY CORP   2022-09-30        Utilities  Utilities - Renewable  revenue  6.051000e+09
@@ -51,11 +51,11 @@ def query():
 
     return melt
 
-
+# query()
 
 df = pd.read_csv('./data/equity_fundamentals_revenue_leaders.csv')
 
-melt = df.melt(id_vars = ['ticker', 'name', 'calendardate', 'sector', 'industry'], value_vars = ['fcfmargin','eps','oppmargin','profitmargin', 'netmargin', 'roc', 'roe', 'revenue'])
+melt = df.melt(id_vars = ['ticker', 'name', 'calendardate', 'sector', 'industry'], value_vars = ['fcfmargin','eps','oppmargin','profitmargin', 'netmargin', 'roc', 'roe', 'revenue', 'assets', 'liabilities'])
 
 # ...Sample Data...
 
@@ -85,3 +85,9 @@ sample5 = sample5[sample5.ticker != 'CEG']
 sample5 = sample5.sort_values(by = ['ticker', 'calendardate'], ascending=True).reset_index(drop=True)
 sample5['calendardate'] =  sample5['calendardate'].apply(lambda x : x.strftime('%Y-%m-%d'))
 
+sample6 = melt[ (melt.sector == 'Utilities') & (melt.calendardate > pd.to_datetime('2021-12-31')) & (melt.variable.isin(['assets', 'liabilities'])) ]
+sample6['calendardate'] =  sample6['calendardate'].apply(lambda x : x.strftime('%Y-%m-%d'))
+assets = sample6[sample6.variable == 'assets'].set_index(['ticker','name', 'calendardate','sector','industry',]).rename(columns = {'value':'assets'}).drop('variable', axis=1)
+liabilities = sample6[sample6.variable == 'liabilities'].set_index(['ticker','name', 'calendardate','sector','industry']).rename(columns = {'value':'liabilities'}).drop('variable', axis=1)
+sample6 = assets.merge(liabilities, how = 'outer', left_index=True, right_index=True).reset_index()
+sample6.sort_values(by = ['calendardate','ticker'], ascending = True, inplace = True)
